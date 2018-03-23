@@ -12,6 +12,11 @@ export default class GameScene extends BaseScene {
     this.localCharacter = null;
   }
 
+  init(data){
+    this._userCharacter=data.character;
+    console.log('user chose' + this._userCharacter);
+  }
+
   preload() {
     //load config file for socket information
     this.config=this.cache.json.get('config');

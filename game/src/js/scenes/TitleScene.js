@@ -58,11 +58,12 @@ export default class TitleScene extends Phaser.Scene {
 
   update() {
     if(this.startKey.isDown) {
-      this.scene.start('CharacterSelectionScene');
+      this.scene.start('CharacterSelectionScene',{type: 'single_player'});
     }
       
     if(this.startKey2.isDown) {
-      this.scene.start('DungeonScene');
+      // this.scene.start('DungeonScene');
+      this.scene.start('CharacterSelectionScene',{type: 'multi_player'});
     }
   }
 }

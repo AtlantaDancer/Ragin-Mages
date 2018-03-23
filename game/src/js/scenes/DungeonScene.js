@@ -9,9 +9,13 @@ export default class DungeonScene extends BaseScene {
   constructor() {
     super({ key: 'DungeonScene' });
   }
-
+  init(data){
+    this._userCharacter=data.character;
+    console.log('user chose' + this._userCharacter);
+  }
   preload() {
     
+    this.characters = this.add.group();
     this.map1 = this.add.tilemap('dungeon_map');
     this.tileset1 = this.map1.addTilesetImage('stone-tiles', 'stone-tiles');
     this.layer1 = this.map1.createStaticLayer('Dungeon Map', this.tileset1, -500, -340);
@@ -24,7 +28,34 @@ export default class DungeonScene extends BaseScene {
 
   create() {
     
+    switch(this._userCharacter){
 
+    case 'orb' :
+      this.body.setCircle(20);
+      break;
+      
+    case 'orb_p' :
+      this.body.setCircle(15);
+      break;
+      
+    case 'ven' :
+      this.body.setCircle(10);
+      break;
+      
+    case 'fire' :
+      this.body.setCircle(30);
+      break;
+      
+    case 'light' :
+      this.body.setCircle(20);
+      break;
+      
+    case 'ice' :
+      this.body.setCircle(20);
+      break;
+    
+    }
+  
     this.fireMonster = new FireMonster(this, -100, 0);
     this.iceMonster = new IceMonster(this, 100, -100);
     this.spiderMonster = new SpiderMonster(this, -300, 100);

@@ -5,7 +5,10 @@ export default class CharacterSelectionScene extends Phaser.Scene {
   constructor() {
     super({key: 'CharacterSelectionScene'});
   }
-
+  init(data){
+    this._userMode=data.type;
+    console.log('user mode=' + this._userMode);
+  }
   preload() {
     this.assets =  this.cache.json.get('assets');
   }
@@ -23,7 +26,7 @@ export default class CharacterSelectionScene extends Phaser.Scene {
       shadowBlur: '5'
     });
 
-    let btnX=70;
+    let btnX=200;
     let btnY=50;
     let btnSpacing=50;
     for(let character of this.assets.characters) {
@@ -38,16 +41,18 @@ export default class CharacterSelectionScene extends Phaser.Scene {
 
     chkContinue.scene=this;
     chkContinue.onPointerDown(function(obj) {
-      console.log('User selected' + obj.text + ' checked', obj.isChecked() ? 'yes' : 'no');
-
-      if(obj.isChecked() && obj.scene.characterKey!='' ) {
-        console.log('starting game scene as ' + obj.scene.characterKey );
-        
-        obj.scene.continue=true;  
-      }
-      else{
-        if (!obj.isChecked && obj.scene.characterKey=='') {
-          obj.scene.add.text(50, obj.scene.lastButtonY, 'No really select a character', {
+      console.log('User selected' + obj.label + ' checked', obj.isChecked() ? 'yes' : 'no');
+      console.log('character key=' + obj.scene.characterKey);
+      if(obj.isChecked()) {
+        if( obj.scene.characterKey!='' ) {
+          console.log('starting game scene as ' + obj.scene.characterKey );
+          
+          obj.scene.continue=true;  
+        }
+        else{
+          
+          console.log('in error if');
+          obj.scene._errorText= obj.scene.add.text(100, obj.scene.lastButtonY, 'Please select a character before continuing', {
             font: '14px Arial',
             fill: '#FF0000',
             stroke: '#000000',
@@ -57,6 +62,7 @@ export default class CharacterSelectionScene extends Phaser.Scene {
             shadowOffsetY: '10',
             shadowBlur: '5'
           });
+          obj.setChecked(false);
         }
       }
 
@@ -64,30 +70,36 @@ export default class CharacterSelectionScene extends Phaser.Scene {
   }
 
   _addCharacterButton(btnData,scene,x,y){
-    let chkKnight = new Checkbox(scene, x, y, btnData.label , false);
-    chkKnight.key=btnData.key;
-    chkKnight.scene=scene;
-    chkKnight.onPointerDown(scene._HandleCharacterButtons);
+    let chkButton = new Checkbox(scene, x, y, btnData.label , false);
+    chkButton.key=btnData.key;
+    chkButton.scene=scene;
+    chkButton.onPointerDown(scene._HandleCharacterButtons);
 
   }
   _HandleCharacterButtons(obj){
     console.log('User selected' + obj.key + ' checked', obj.isChecked() ? 'yes' : 'no');
 
     if(obj.isChecked()) {
-    //        serviceWorker.register();
       obj.scene.characterKey=obj.key;
+      obj.scene._errorText.destroy();
     }
     else {
       if (obj.scene.characterKey==obj.key){
         obj.scene.characterKey='';
       }
-    //        serviceWorker.unregister();
     }
   }  
 
   update() {
-    if (this.continue) {
-      this.scene.start('GameScene');  
+    if (this.continue )  {
+      if (this._userMode=='multi_player') {
+        console.log('starting multi-player for mode ' + this._userMode);
+        this.scene.start('GameScene',{character: this.characterKey});  
+      }
+      else {
+        console.log('starting single-player for mode ' + this._userMode);
+        this.scene.start('DungeonScene',{character: this.characterKey});
+      }
     }
   }
 }
