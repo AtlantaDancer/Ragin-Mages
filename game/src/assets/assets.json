@@ -28,6 +28,7 @@
       "frameWidth": 300,
       "frameHeight": 300
     }
+
   ],
   "atlas": [
     {
@@ -91,5 +92,19 @@
     "js/phaser.min.js",
     "js/game.js",
     "css/main.css"
+  ],
+  "characters": [
+    {
+      "key": "knight_hero",
+      "label": "Valiant Knight"
+    },
+    {
+      "key": "priest_hero",
+      "label": "Avenging Priest"
+    },
+    {
+      "key": "mage_hero",
+      "label": "Magical Mage"
+    }
   ]
 }
