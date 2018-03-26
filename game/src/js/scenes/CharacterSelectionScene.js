@@ -1,4 +1,5 @@
 import Checkbox from 'objects/ui/Checkbox';
+import Button from 'objects/ui/Button'
 
 export default class CharacterSelectionScene extends Phaser.Scene {
 
@@ -14,92 +15,47 @@ export default class CharacterSelectionScene extends Phaser.Scene {
   }
     
   create() {
+    let background = this.add.image(800, 330, 'title_background');
+    this.cameras.main.startFollow(background);
+    
+    let logoStyle = {fontSize: 85, fontFamily: "'Jim Nightshade', cursive", color: '#000000'};
+    let logo = this.add.text(450, 50, 'Ragin\' Mages', logoStyle);
+    logo.setStroke('#ae7f00', 16);
 
-    this.add.text(50, 0, 'Select your character then click continue', {
-      font: '18px Arial',
-      fill: '#ffffff',
-      stroke: '#000000',
-      strokeThickness: '6',
-      shadowFill: '#ffffff',
-      shadowStroke: '#ffffff',
-      shadowOffsetY: '10',
-      shadowBlur: '5'
+    this.add.text(450, 200, 'Select your character',{
+      fontSize: 30,
+      fontFamily: "'Fjalla One', sans-serif",
+      fill: '#ae7f00',
+      width: '500px',
     });
 
-    let btnX=200;
-    let btnY=50;
+    let btnX=450;
+    let btnY=250;
     let btnSpacing=50;
     for(let character of this.assets.characters) {
       this._addCharacterButton(character,this,btnX,btnY );
       btnY +=btnSpacing;
     }
-    let chkContinue = new Checkbox(this, btnX, btnY, 'Continue', false);
-    this.lastButtonY=btnY+=btnSpacing;
-
-    this.characterKey='';
-    this.continue=false;
-
-    chkContinue.scene=this;
-    chkContinue.onPointerDown(function(obj) {
-      console.log('User selected' + obj.label + ' checked', obj.isChecked() ? 'yes' : 'no');
-      console.log('character key=' + obj.scene.characterKey);
-      if(obj.isChecked()) {
-        if( obj.scene.characterKey!='' ) {
-          console.log('starting game scene as ' + obj.scene.characterKey );
-          
-          obj.scene.continue=true;  
-        }
-        else{
-          
-          console.log('in error if');
-          obj.scene._errorText= obj.scene.add.text(100, obj.scene.lastButtonY, 'Please select a character before continuing', {
-            font: '14px Arial',
-            fill: '#FF0000',
-            stroke: '#000000',
-            strokeThickness: '6',
-            shadowFill: '#FF0000',
-            shadowStroke: '#FF0000',
-            shadowOffsetY: '10',
-            shadowBlur: '5'
-          });
-          obj.setChecked(false);
-        }
-      }
-
-    })  
   }
 
   _addCharacterButton(btnData,scene,x,y){
-    let chkButton = new Checkbox(scene, x, y, btnData.label , false);
+    let chkButton = new Button(this, x, y, btnData.label);
     chkButton.key=btnData.key;
     chkButton.scene=scene;
-    chkButton.onPointerDown(scene._HandleCharacterButtons);
-
-  }
-  _HandleCharacterButtons(obj){
-    console.log('User selected' + obj.key + ' checked', obj.isChecked() ? 'yes' : 'no');
-
-    if(obj.isChecked()) {
-      obj.scene.characterKey=obj.key;
-      obj.scene._errorText.destroy();
-    }
-    else {
-      if (obj.scene.characterKey==obj.key){
-        obj.scene.characterKey='';
-      }
-    }
-  }  
-
-  update() {
-    if (this.continue )  {
+    chkButton.buttonDown(() => {
       if (this._userMode=='multi_player') {
-        console.log('starting multi-player for mode ' + this._userMode);
-        this.scene.start('GameScene',{character: this.characterKey});  
+        // console.log('starting multi-player for mode ' + this._userMode);
+        this.scene.start('GameScene',{character: btnData.key});  
       }
       else {
-        console.log('starting single-player for mode ' + this._userMode);
-        this.scene.start('DungeonScene',{character: this.characterKey});
+        // console.log('starting single-player for mode ' + this._userMode);
+        this.scene.start('DungeonScene',{character: btnData.key});
       }
-    }
+    });
   }
+
+  update() {
+
+  }
+
 }

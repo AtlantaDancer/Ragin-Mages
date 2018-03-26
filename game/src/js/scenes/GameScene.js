@@ -51,6 +51,7 @@ export default class GameScene extends BaseScene {
         let worldX = event.x + event.camera.scrollX * event.camera.zoom;
         let worldY = event.y + event.camera.scrollY * event.camera.zoom;
         this.localCharacter.fire(worldX, worldY);
+        this.socket.emit('fire', this.localCharacter.x, this.localCharacter.y, worldX, worldY);
       }
     }, this);
 
@@ -71,6 +72,8 @@ export default class GameScene extends BaseScene {
     this.socket.on('playerJoined', this.playerJoined.bind(this));
     this.socket.on('setMotion', this.setMotion.bind(this));
     this.socket.on('setPosition', this.setPosition.bind(this));
+    this.socket.on('playerFired', this.playerFired.bind(this));
+    this.socket.on('playerDied', this.playerDied.bind(this));
     this.socket.on('playerDisconnected', this.playerDisconnected.bind(this));
   }
 
@@ -80,13 +83,14 @@ export default class GameScene extends BaseScene {
       if(this.localCharacter.motionChanged(vector)) {
         console.log('motion changed locally');
         this.localCharacter.setMotion(vector);
-        this.socket.emit('setMotion', this.localCharacter.x, this.localCharacter.y, vector.x, vector.y);  
+        this.socket.emit('setMotion', this.localCharacter.x, this.localCharacter.y, vector.x, vector.y);
       }
     }
   }
 
   playerHit(projectile, character) {
     projectile.destroy();
+    this.socket.emit('death', this.localCharacter.x, this.localCharacter.y);
     character.die();
   }
 
@@ -121,7 +125,7 @@ export default class GameScene extends BaseScene {
     }
     else {
       this.localCharacter = new Priest(this, x, y);
-      this.characters.remove(this.localCharacter); //this is us.
+      this.characters.add(this.localCharacter); //this is us.
       this.cameras.main.startFollow(this.localCharacter);
     }
   }
@@ -140,6 +144,23 @@ export default class GameScene extends BaseScene {
     if(!player) return;
     player.lastOrientation = orientation;
     player.setPosition(x, y);
+  }
+
+  playerFired(id, fromX, fromY, toX, toY) {
+    console.log('playerFired');
+    let player = this.players.get(id);
+    if(!player) return;
+    player.setPosition(fromX, fromY);
+    let projectile = player.fire(toX, toY);
+    this.projectiles.add(projectile);
+  }
+
+  playerDied(id, posX, posY) {
+    console.log('playerFired');
+    let player = this.players.get(id);
+    if(!player) return;
+    player.setPosition(posX, posY);
+    player.die();
   }
 
   playerDisconnected(id) {
