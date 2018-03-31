@@ -1,11 +1,11 @@
 import uuidv4  from 'uuid/v4';
-
+const NoRank=null;
 export default class PlayerManager {
   constructor(socketio) {
     this.io = socketio;
     this.lobbyPlayerMap = new Map();
     this.gamePlayerMap = new Map();
-
+    this.leaderBoard=[];
     this.io.on('connection', this.playerConnected.bind(this));
   }
 
@@ -15,7 +15,7 @@ export default class PlayerManager {
     socket.emit('setId', socket.id);
 
     console.log('Player connected', socket.id);
-    console.log(this.lobbyPlayerMap.size + this.gamePlayerMap.size, 'players connected,', this.gamePlayerMap.size, 'in game');
+    console.log('connect',this.lobbyPlayerMap.size + this.gamePlayerMap.size, 'players connected,', this.gamePlayerMap.size, 'in game');
 
     socket.on('disconnect', () => {
       this.playerDisconnected(socket);
@@ -49,7 +49,18 @@ export default class PlayerManager {
       socket.emit('existingPlayers', existingPlayers);
       //Notify everyone of this new player
       socket.broadcast.emit('playerJoined', socket.id, character, handle, socket.x, socket.y);
-      console.log(this.lobbyPlayerMap.size + this.gamePlayerMap.size, 'players connected,', this.gamePlayerMap.size, 'in game');
+      console.log('join',this.lobbyPlayerMap.size + this.gamePlayerMap.size, 'players connected,', this.gamePlayerMap.size, 'in game');
+    
+      //add player to leader board
+      this.leaderBoard.push({
+        id: socket.id,
+        handle: handle,
+        kills: 0,
+        currentRank:0,
+        highestRank:NoRank
+      } );
+      console.log('join leaderboard',this.leaderBoard);
+      console.log('join Leaderboard length',this.leaderBoard.length);
     });
     
     socket.on('setMotion', (posX, posY, vecX, vecY) => {
@@ -77,6 +88,18 @@ export default class PlayerManager {
       socket.x = posX;
       socket.y = posY;
       socket.broadcast.emit('playerDied', socket.id, posX, posY, killedById);
+      console.log('death');
+      let index=this.leaderBoard.findIndex((value) =>  value.id==killedById);
+      if (index>-1) {
+        this.leaderBoard[index].kills ++;
+      }
+      index=this.leaderBoard.findIndex((value) =>  value.id==socket.id);
+      if (index>-1) {
+        this.leaderBoard[index].kills = 0;
+        this.leaderBoard[index].highestRank=NoRank;
+      }
+      console.log('death by', killedById,this.leaderBoard);
+      this.UpdateRankings();
     });
 
     socket.on('respawn', () => {
@@ -84,13 +107,31 @@ export default class PlayerManager {
       socket.y = Math.random() * 400 - 200;
       //Notify everyone of this new player
       socket.broadcast.emit('playerJoined', socket.id, socket.character, socket.handle, socket.x, socket.y);
-      console.log(this.lobbyPlayerMap.size + this.gamePlayerMap.size, 'players connected,', this.gamePlayerMap.size, 'in game');
+      console.log('respawn', this.lobbyPlayerMap.size + this.gamePlayerMap.size, 'players connected,', this.gamePlayerMap.size, 'in game');
+
+      const index=this.leaderBoard.findIndex((value) =>  value.id==socket.id);
+      if (index>-1) {
+        this.leaderBoard[index].kills = 0;
+      }
+      console.log('respawn', socket.id,this.leaderBoard);
+      this.UpdateRankings();
     });
 
     socket.on('exitGame', () => {
       this.gamePlayerMap.delete(socket.id);
-      this.lobbyPlayerMap.set(socket.id, socket);
+      // for now don't move them to the lobby they rejoin with new ID if they exit/re-enter
+      // this.lobbyPlayerMap.set(socket.id, socket);
+      this.lobbyPlayerMap.delete(socket.id);
       socket.broadcast.emit('playerExited', socket.id);
+
+      console.log('exit leaderboard',this.leaderBoard,this.leaderBoard.length);
+      const delIndex=this.leaderBoard.findIndex((value) =>  value.id==socket.id);
+      console.log('delete item',delIndex,this.leaderBoard[delIndex]);
+      if (delIndex>-1) {
+        this.leaderBoard.splice(delIndex,1);
+      }
+      console.log('after delete',this.leaderBoard,this.leaderBoard.length);
+      this.UpdateRankings();
     });
     
   }
@@ -99,7 +140,33 @@ export default class PlayerManager {
     this.gamePlayerMap.delete(socket.id);
     this.lobbyPlayerMap.delete(socket.id);
     socket.broadcast.emit('playerDisconnected', socket.id);
-    console.log(this.lobbyPlayerMap.size + this.gamePlayerMap.size, 'players connected,', this.gamePlayerMap.size, 'in game');
+    console.log('disconnect', this.lobbyPlayerMap.size + this.gamePlayerMap.size, 'players connected,', this.gamePlayerMap.size, 'in game');
+    
+    console.log('disc leaderbaord',this.leaderBoard, this.leaderBoard.length);
+    const delIndex = this.leaderBoard.findIndex((value) => value.id==socket.id);
+    this.leaderBoard.splice(delIndex,1);
+    console.log('after del',this.leaderBoard,this.leaderBoard.length);
+    this.UpdateRankings();
+  }
+  UpdateRankings(){
+    console.log('updating rankings');
+    this.leaderBoard.sort(function(char1,char2)  {
+      if (char1.kills < char2.kills)
+        return 1;
+      if (char1.kills > char2.kills)
+        return -1;
+      return 0;
+    });
 
+    this.leaderBoard.forEach( function (character,index) {
+      if (character.kills>0) {
+        character.currentRank=index+1;
+        if (character.currentRank<character.highestRank || character.highestRank==null) {
+          character.highestRank=character.currentRank;
+        //send message to client of their updated ranking
+          // socket.emit('setId', socket.id);
+        }
+      }
+    })
   }
 }
