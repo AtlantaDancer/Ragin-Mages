@@ -1,11 +1,12 @@
 import Player  from './Player';
+import LeaderBoard from './leaderboard';
 
 export default class PlayerManager {
   constructor(socketio) {
     this.io = socketio;
     
     this.players = new Map();
-
+    this.leaderBoard= new LeaderBoard(this, socketio);
     this.io.on('connection', this.playerConnected.bind(this));
   }
 
@@ -23,14 +24,19 @@ export default class PlayerManager {
   playerConnected(socket) {
     let player = new Player(this, socket);
     this.players.set(socket, player);
+    console.log('connected socket',socket,'player',player);
+    this.leaderBoard.addPlayer(player);
 
     console.log('Player connected', player.id);
     console.log(this.players.size, 'players connected');
 
     socket.on('disconnect', () => {
       this.players.delete(socket);
+      console.log('disconnect',player);
       socket.broadcast.emit('playerDisconnected', player.id);
       console.log(this.players.size, 'players connected');
+      this.leaderBoard.removePlayer(player.id);
+      this.leaderBoard.updateRankings();
     });
   }
 }

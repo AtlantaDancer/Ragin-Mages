@@ -1,10 +1,12 @@
 import uuidv4  from 'uuid/v4';
+const NoRank=null;
 
 export default class Player {
-  constructor(playerManager, socket) {
+  constructor(playerManager, leaderBoard,socket) {
     this.playerManager = playerManager;
     this.socket = socket;
     this.id = uuidv4();
+    this.leaderBoard=leaderBoard;
     
     this.reset();
 
@@ -27,6 +29,7 @@ export default class Player {
       motionVector: {x: 0, y: 0},
       lastUpdate: 0
     };
+    this.resetStats();    
   }
 
   joinGame(character, handle) {
@@ -36,6 +39,7 @@ export default class Player {
     this.handle = handle;
     this.position.x = Math.random() * 400 - 200;
     this.position.y = Math.random() * 400 - 200;
+    this.resetStats();    
     //Create a list of existing connected players
     let existingPlayers = [];
     this.playerManager.getAllPlayersInGame().forEach(value => {
@@ -49,7 +53,6 @@ export default class Player {
       });
     });
 
-    
     this.socket.join('game'); //Join the game room. This needs to happen after we get the list of players to avoid duplication
     
     //Send player list to new player
@@ -65,6 +68,7 @@ export default class Player {
     //Store attributes locally
     this.reset();
     this.socket.to('game').emit('playerLeft', this.id);
+    this.leaderBoard.updateRankings();
   }
     
   move(posX, posY, vecX, vecY) {
@@ -84,6 +88,7 @@ export default class Player {
     this.position.x = posX;
     this.position.y = posY;
     this.socket.to('game').emit('playerDied', this.id, posX, posY, killedBy);
+    this.leaderBoard.updateRankings();
   }
 
   respawn() {
@@ -93,10 +98,16 @@ export default class Player {
       motionVector: {x: 0, y: 0},
       lastUpdate: 0
     };
+    this.resetStats;
     //Notify everyone of this new player
     this.socket.to('game').emit('playerJoined', this.id, this.character, this.handle, this.position.x, this.position.y);
     this.socket.emit('spawn', this.position.x, this.position.y);
   }
 
-
+  resetStats(){
+    this.stats= {
+      kills: 0,
+      currentRank:0,
+      highestRank:NoRank};    
+  }
 }
