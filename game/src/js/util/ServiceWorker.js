@@ -9,16 +9,16 @@ export default class ServiceWorker {
 
     navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then(reg => {
-        if (!navigator.serviceWorker.controller) {
+        if(!navigator.serviceWorker.controller) {
           return;
         }
 
-        if (reg.waiting) {
+        if(reg.waiting) {
           this.updateReady(reg.waiting);
           return;
         }
 
-        if (reg.installing) {
+        if(reg.installing) {
           this.trackInstalling(reg.installing);
           return;
         }
@@ -31,7 +31,7 @@ export default class ServiceWorker {
 
   updateReady(worker) {
     const shouldUpdate = confirm('Game update available! Reload?');
-    if (shouldUpdate) {
+    if(shouldUpdate) {
       worker.postMessage({ action: 'skipWaiting' });
       return;
     }
@@ -39,28 +39,24 @@ export default class ServiceWorker {
 
   trackInstalling(worker) {
     worker.addEventListener('statechange', () => {
-      if (worker.state === 'installed') {
+      if(worker.state === 'installed') {
         this.updateReady(worker);
       }
 
-      if (worker.state === 'activated') {
-        if (this.refreshing) return;
+      if(worker.state === 'activated') {
+        if(this.refreshing) return;
         window.location.reload();
         this.refreshing = true;
       }
     });
   }
 
-
-
-
-
   unregister() {
     ServiceWorker.requireSWSupport();
 
     navigator.serviceWorker.getRegistrations().then(function(registrations) { 
       for(let registration of registrations) {
-        console.log(registration);
+        registration.active.postMessage({ action: 'deleteCache' })
         registration.unregister();
       }
     }).catch(function() {
@@ -68,14 +64,10 @@ export default class ServiceWorker {
     });
   }
 
-
   isRegistered() {
     ServiceWorker.requireSWSupport();
     return navigator.serviceWorker.controller != null;
   }
-
-
-
 
   // STATIC METHODS
 
@@ -94,12 +86,10 @@ export default class ServiceWorker {
 
     navigator.serviceWorker.getRegistrations().then(function(registrations) { 
       for(const registration of registrations) {
-        console.log(registration);
         registration.unregister();
       }
     }).catch(function() {
       console.log('Failed to delete service worker or service worker did not exist');
     });
   }
-
 }
