@@ -222,7 +222,37 @@ export default class GameScene extends BaseScene {
     player.die();
     this.players.delete(id);
   }
+  
+  displayKill(id,killedById){
+    let displayText='';
+    if (this.isLocalPlayer(killedById)) {
+      displayText='You killed ' + this.getPlayerHandle(killedById);
+    }
+    else if (this.isLocalPlayer(id)) {
+      displayText='You were killed by ' + this.getPlayerHandle(killedById);
+    }
+    else {
+      displayText = this.getPlayerHandle(id) + 'killed by ' + this.getPlayerHandle(killedById);
+    }
+    //now display kill notice
+    // this.cameras.main.scrollX * this.cameras.main.zoom    
+  }
 
+  getPlayerHandle(id){
+    let player = this.players.get(id);
+    if(!player) {
+      return 'unknown player'
+    }
+    return player.handle;
+  }
+
+  isLocalPlayer(id){
+    if(id == this.server.getClientId() && this.localCharacter) {
+      return true;
+    }
+  }
+
+  
   playerDisconnected(id) {
     this.tweens.killTweensOf(player);
     let player = this.players.get(id);
